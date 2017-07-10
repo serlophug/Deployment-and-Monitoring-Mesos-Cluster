@@ -1,0 +1,20 @@
+{
+  "schedule": "R11//PT10M",
+  "name": "linpackMulti_2",
+  "container": {
+      "type": "DOCKER",
+      "image": "eubrabigsea/marathonvetest",
+      "forcePullImage": true,
+      "volumes": [
+      {
+        "containerPath": "/data/",
+        "hostPath": "/home/users/bigsea/serlophug/data",
+        "mode": "RW"
+      } ]
+  },
+  "cpus": "1",
+  "mem": "1000",
+  "command": "/bin/bash -c 'time /mtlinpack'",
+  "owner": "serlophug.upv@gmail.com",
+  "async": "false"
+}
