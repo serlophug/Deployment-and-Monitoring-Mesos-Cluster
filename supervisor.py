@@ -56,7 +56,7 @@ def init_log( logDirectory ):
     handler_info.setFormatter(formatter)
     logger.addHandler(handler_info) # add the handlers to the logger
 
-def get_arguments():       
+def get_arguments():
     global monasca, chronos, marathon, api_rest_ip, api_rest_port
     credentials_openstack_name = ''
     credentials_chronos_name = ''
@@ -117,14 +117,16 @@ def init_task ( data ):
         'allexecutions_duration': [],
         'uuid': data['uuid']
     }
-
+    current_time = int(time.time()) 
     if (data['framework'] == 'chronos'):         
+        
         allinfo [ data['framework'] ][ data['uuid'] ][ 'iterations'] = data['iterations']
-        allinfo [ data['framework'] ][ data['uuid'] ][ 'current' ] = int(time.time())  
+        allinfo [ data['framework'] ][ data['uuid'] ][ 'current' ] =  current_time
         allinfo [ data['framework'] ][ data['uuid'] ]['allexecutions_hostname'] = []
 
         timeBeforeDeadline = int(data['deadline'])  - int(time.time())
-        allinfo [ data['framework'] ][ data['uuid'] ][ 'deadline_inf'] = data['deadline'] - data['desv_deadline']*timeBeforeDeadline
+        #allinfo [ data['framework'] ][ data['uuid'] ][ 'deadline_inf'] = data['deadline'] - data['desv_deadline']*timeBeforeDeadline
+        allinfo [ data['framework'] ][ data['uuid'] ][ 'deadline_inf'] = current_time + data['desv_deadline']*timeBeforeDeadline
         allinfo [ data['framework'] ][ data['uuid'] ][ 'deadline_sup'] = data['deadline'] - 0.05*timeBeforeDeadline
         
         chronos.startJob(data['name'])
@@ -426,9 +428,11 @@ def get_cpu_from_monasca( uuid, info, current_time, retries=0 ):
 
 def check_state_marathon (current_cputime, desired_cputime, desv_deadline):
     rate = current_cputime / desired_cputime
-    if (rate < (1.0 - desv_deadline)  ):
-        return 'UNDER_PERFORMANT'
-    elif (rate > (1.0 + desv_deadline)  ):
+    #if (rate < (1.0 - desv_deadline)  ):
+    if (rate < 0.95):
+            return 'UNDER_PERFORMANT'
+    #elif (rate > (1.0 + desv_deadline)  ):
+    elif (rate > (1.0 + desv_deadline)):
         return 'OVER_PERFORMANT'
     else:
         return 'ON_PLAN'
