@@ -107,7 +107,7 @@ def init_webhook( url_webhook, payload ):
 	msg = json.dumps(payload)
 	response = requests.post( url, headers=head, data=msg )
 
-def modify_job(api_rest_ip, framework_name, jobname, myUUID, shell_trap_path, checkpoint_dir, marathon_init_url_webhook, marathon_end_url_webhook, taskKillGracePeriodSeconds) :
+def modify_job(api_rest_ip, framework_name, jobname, myUUID, executor_path, checkpoint_dir, marathon_init_url_webhook, marathon_end_url_webhook, taskKillGracePeriodSeconds) :
 	if (framework_name == 'chronos'):
 		updateCommand_1 = "startedAt=$(date +%s); "
 		updateCommand_2 = "; /usr/bin/curl -H 'Content-type: application/json' -X POST " + api_rest_ip +"/updateTask -d '{\"name\": \"" + jobname + "\", \"finished_at\": \"'$(date +%s)'\", \"started_at\": \"'$(echo $startedAt)'\", \"hostname\": \"'$(hostname)'\", \"uuid\": \"" + myUUID + "\"}'"
@@ -124,7 +124,7 @@ def modify_job(api_rest_ip, framework_name, jobname, myUUID, shell_trap_path, ch
 
 		# Set command to execute
 		cmd = job['cmd']
-		job['cmd'] = shell_trap_path + ' $MY_UUID $MY_CHECKPOINT_DIR $MY_DOCKER_IMAGE $MY_START_URL_WEBHOOK $MY_END_URL_WEBHOOK \"$MY_DOCKER_OPTIONS\" \"'+ cmd + '\"'
+		job['cmd'] = executor_path + ' $MY_UUID $MY_CHECKPOINT_DIR $MY_DOCKER_IMAGE $MY_START_URL_WEBHOOK $MY_END_URL_WEBHOOK \"$MY_DOCKER_OPTIONS\" \"'+ cmd + '\"'
 		
 		# Environmental variables
 		if not ('env' in job):
@@ -200,11 +200,14 @@ def generateUUID():
 if __name__ == '__main__':
 
 	# Configuration options
-	shell_trap_path = '/home/users/shared/serlophug/checkpointing/shell_trap.sh'
+	executor_path = '/home/users/shared/serlophug/checkpointing/Executor.sh'
 	checkpoint_dir = '/home/users/shared/serlophug/checkpointing'
+	taskKillGracePeriodSeconds = 120
+
+	# REST API
 	marathon_init_url_webhook = '/initMarathonApp'
 	marathon_end_url_webhook = '/endMarathonApp'
-	taskKillGracePeriodSeconds = 120
+	
 	#deadline_timestamp = int(deadline.strftime("%s"))
 	framework, framework_name, job, jobname, credentials_framework_name, api_rest_ip = get_arguments()
 
@@ -215,7 +218,7 @@ if __name__ == '__main__':
 	myUUID = generateUUID()
 
 	payload = get_payload(framework_name, jobname, job_duration, deadline, desv_deadline, myUUID)
-	job = modify_job(api_rest_ip, framework_name, jobname, myUUID, shell_trap_path, checkpoint_dir, marathon_init_url_webhook, marathon_end_url_webhook, taskKillGracePeriodSeconds)
+	job = modify_job(api_rest_ip, framework_name, jobname, myUUID, executor_path, checkpoint_dir, marathon_init_url_webhook, marathon_end_url_webhook, taskKillGracePeriodSeconds)
 	
 	if ( framework.sendJob(job) ):
 		print('Launch completed with UUID: '+ myUUID)

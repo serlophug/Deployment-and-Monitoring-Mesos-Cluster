@@ -4,46 +4,39 @@ from ManagerMonasca import *
 from ManagerMarathon import *
 from ManagerChronos import *
 from Metrics import *
-from InfiniteTimer import * 
-
+from InfiniteTimer import *
 from threading import Lock, Timer
-
 from flask import Flask, url_for, request
 import json
 import logging
 import time
-import datetime 
+import datetime
 import getopt
 import sys
 import os
 
-# Add my path
-#pathname = os.path.dirname(sys.argv[0]) 
-#fullpath = os.path.abspath(pathname)
-#sys.path.append(fullpath) # Add my path
 
-app = Flask(__name__)
-allinfo = { 'chronos': {}, 'marathon': {} }
-sleeping_time = 5 # CHRONOS: Between startJob calls
+
+# Config parameters
+sleeping_time = 0 # CHRONOS: Between startJob calls
 logDirectory = '/home/users/bigsea/serlophug/log'
-mutex = Lock()
-
+deployment_time = 45
+ticksPerSecond = 100.0
+monitoring_period = 120
 # Elasticity parameters
 cpu_max_slave = 2.0
 cpu_min_slave = 0.1
 cpu_increment = 0.4
 cpu_decrement = 0.4
 
-# Main Marathon
-monitoring_period = 120
-
-deployment_time = 45
-ticksPerSecond=100.0
+mutex = Lock()
+app = Flask(__name__)
+allinfo = {'chronos': {}, 'marathon': {}}
 
 def help():
-    print ('USAGE: supervisor.py\n\t-i <api_rest_ip>: ip for REST API. Optional\n\t-p <api_rest_port>: port for REST API. Optional\n\t-m <credentials-marathon>: json with credentials-marathon\n\t-o <credentials-openstack>: json with credentials for keystone and monasca\n\t-c <credentials-chronos>: json with credentials-chronos\n\t')
+    print('USAGE: supervisor.py\n\t-i <api_rest_ip>: ip for REST API. Optional\n\t-p <api_rest_port>: port for REST API. Optional\n\t-m <credentials-marathon>: json with credentials-marathon\n\t-o <credentials-openstack>: json with credentials for keystone and monasca\n\t-c <credentials-chronos>: json with credentials-chronos\n\t')
             
-def init_log( logDirectory ):
+def init_log(logDirectory):
     filename = logDirectory + '/' +datetime.datetime.utcnow().strftime("%Y%m%d") + '.log'
     if not os.path.isfile(filename): 
         file(filename, 'w').close()
@@ -73,7 +66,7 @@ def get_arguments():
     for opt, arg in opts:
         if opt == '-h':
             help()
-            sys.exit()      
+            sys.exit()
         elif opt in ("-o", "--credentials-openstack"):
             credentials_openstack_name = arg
         elif opt in ("-c", "--credentials-chronos"):
@@ -86,13 +79,13 @@ def get_arguments():
             api_rest_port = int(arg)
 
     if ( credentials_marathon_name == '' ) or (credentials_chronos_name == '') or (credentials_openstack_name == '') :
-        print ('ERROR: At least the program needs 3 arguments: <credentials-openstack>, <credentials-marathon> and <credentials-chronos>') 
+        print ('ERROR: At least the program needs 3 arguments: <credentials-openstack>, <credentials-marathon> and <credentials-chronos>')
         sys.exit(1)
 
     credentials_openstack_file = open( credentials_openstack_name, 'r')
     credentials_chronos_file = open( credentials_chronos_name, 'r')
     credentials_marathon_file = open( credentials_marathon_name, 'r')
-    try: 
+    try:
         credentials_openstack = json.loads( credentials_openstack_file.read() )
         credentials_chronos = json.loads( credentials_chronos_file.read() )
         credentials_marathon = json.loads( credentials_marathon_file.read() )
@@ -468,7 +461,7 @@ def main_marathon():
             info[uuid]['current_cputime_accumulated'] = current_cpu
             info[uuid]['desired_cputime_accumulated'] = desired_cpu_percent * float( info[uuid]['job_duration'] )
             info[uuid]['marathon_ratio_progress'] = current_cpu_percent / desired_cpu_percent 
-            #print( 'current_cpu_host: ' + str(current_cpu_host) +', current_cpu: ' + str(current_cpu) +', current_cputime_accumulated: ' + str(allinfo[ 'marathon' ][uuid]['current_cputime_accumulated']) +', desired_cputime_accumulated: ' + str( allinfo[ 'marathon' ][uuid]['desired_cputime_accumulated'] ))
+            #prinrequeRstst( 'current_cpu_host: ' + str(current_cpu_host) +', current_cpu: ' + str(current_cpu) +', current_cputime_accumulated: ' + str(allinfo[ 'marathon' ][uuid]['current_cputime_accumulated']) +', desired_cputime_accumulated: ' + str( allinfo[ 'marathon' ][uuid]['desired_cputime_accumulated'] ))
         
             print('\main_marathon of '+ info[uuid]['name'] +' --> job_duration = '+ str(info[uuid]['job_duration']) + ', desired_cputime_accumulated = ' + str(info[uuid]['desired_cputime_accumulated'])+ '\n') 
 
